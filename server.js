@@ -4,10 +4,12 @@ import OpenAI from 'openai'
 
 import { getSettings, listMessages, updateMessageFlags, upsertSettings } from './db.js'
 
-try {
-  process.loadEnvFile()
-} catch {
-  // 云端无 .env 文件时忽略，直接使用平台注入的环境变量
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    process.loadEnvFile();
+  } catch (e) {
+    console.log('本地 .env 文件未找到，将使用系统环境变量');
+  }
 }
 
 const app = express()
