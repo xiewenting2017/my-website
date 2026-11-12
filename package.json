@@ -7,7 +7,7 @@
     "dev": "concurrently -k -n web,api -c cyan,magenta \"vite --port 5173\" \"node --watch --env-file=.env server.js\"",
     "dev:web": "vite --port 5173",
     "dev:api": "node --watch --env-file=.env server.js",
-    "start": "node --env-file=.env server.js",
+    "start": "node --env-file-if-exists=.env server.js",
     "build": "vite build",
     "lint": "oxlint",
     "test": "vitest run",

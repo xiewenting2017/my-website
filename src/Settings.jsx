@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { apiUrl } from './api'
 import {
   Bell, BellOff, Mail, MessageSquare, AlertCircle, CheckCircle2, ChevronRight, Check,
   Volume2, Vibrate, CalendarDays, Clock, ChevronDown, ArrowDown,
@@ -383,7 +384,7 @@ export default function Settings({ onBack }) {
   // 拨动即保存：把快照 POST 到后端，失败则回滚到上次已保存的快照
   const saveSettings = async (snap) => {
     try {
-      const r = await fetch(`/api/settings/${encodeURIComponent(CURRENT_ROLE)}`, {
+      const r = await fetch(apiUrl(`/api/settings/${encodeURIComponent(CURRENT_ROLE)}`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildBody(snap)),
@@ -401,7 +402,7 @@ export default function Settings({ onBack }) {
   // 首次加载：从后端拉取当前角色的偏好设置（含其余设置的 JSON 快照）
   useEffect(() => {
     let cancelled = false
-    fetch(`/api/settings/${encodeURIComponent(CURRENT_ROLE)}`)
+    fetch(apiUrl(`/api/settings/${encodeURIComponent(CURRENT_ROLE)}`))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load failed'))))
       .then((data) => {
         if (cancelled || !data.settings) return

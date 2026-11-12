@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { apiUrl } from './api'
 import Settings from './Settings'
 
 const TABS = [
@@ -228,7 +229,7 @@ export function fromDbMessage(row) {
 
 // 已读/置顶状态回写后端
 function syncMessageFlags(id, flags) {
-  return fetch(`/api/messages/${id}`, {
+  return fetch(apiUrl(`/api/messages/${id}`), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(flags),
@@ -255,6 +256,10 @@ function App() {
   const [toast, setToast] = useState(null) // { type: 'success' | 'error' | 'info', text }
   const [thirdPartyMsg, setThirdPartyMsg] = useState(null) // 第三方待办提示弹窗
   const abortRef = useRef(null)
+  // 打字机队列与调度状态
+  const summaryQueueRef = useRef('')
+  const summaryTimerRef = useRef(null)
+  const summaryClockRef = useRef({ last: 0, acc: 0 })
 
   const modalMessage = messages.find((m) => m.id === activeModalId)
   // 弹窗中的审批消息是否已完成（完成后不再展示「同意申请」）
@@ -279,7 +284,7 @@ function App() {
   // 首次加载：从后端拉取消息列表（失败时保留本地 mock 兜底）
   useEffect(() => {
     let cancelled = false
-    fetch('/api/messages')
+    fetch(apiUrl('/api/messages'))
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load failed'))))
       .then((data) => {
         if (cancelled || !Array.isArray(data.messages)) return
@@ -371,11 +376,53 @@ function App() {
     setShowReadConfirm(false)
   }
 
+  // —— 打字机：SSE 分片先入队，再按固定节奏逐字渲染，避免分片过快时看起来像一次性输出 ——
+  const stopSummaryTyping = () => {
+    if (summaryTimerRef.current) {
+      cancelAnimationFrame(summaryTimerRef.current)
+      summaryTimerRef.current = null
+    }
+    summaryQueueRef.current = ''
+    summaryClockRef.current = { last: 0, acc: 0 }
+  }
+
+  const startSummaryTyping = () => {
+    if (summaryTimerRef.current) return
+    const CHAR_INTERVAL = 20 // 每 20ms 吐出一个字符
+    summaryClockRef.current = { last: performance.now(), acc: 0 }
+    const tick = (now) => {
+      const clock = summaryClockRef.current
+      clock.acc += now - clock.last
+      clock.last = now
+      const count = Math.floor(clock.acc / CHAR_INTERVAL)
+      if (count > 0 && summaryQueueRef.current) {
+        clock.acc -= count * CHAR_INTERVAL
+        const take = summaryQueueRef.current.slice(0, count)
+        summaryQueueRef.current = summaryQueueRef.current.slice(count)
+        setSummary((prev) => prev + take)
+      }
+      if (summaryQueueRef.current) {
+        summaryTimerRef.current = requestAnimationFrame(tick)
+      } else {
+        summaryTimerRef.current = null
+      }
+    }
+    summaryTimerRef.current = requestAnimationFrame(tick)
+  }
+
+  const enqueueSummary = (chunk) => {
+    summaryQueueRef.current += chunk
+    startSummaryTyping()
+  }
+
+  useEffect(() => () => stopSummaryTyping(), [])
+
   const handleGenerateSummary = async () => {
     if (summaryLoading) return
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
+    stopSummaryTyping()
     setSummary('')
     setSummaryLoading(true)
     setSummaryCollapsed(false)
@@ -385,7 +432,7 @@ function App() {
       .join('\n')
 
     try {
-      const response = await fetch('/api/summary', {
+      const response = await fetch(apiUrl('/api/summary'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
@@ -427,12 +474,12 @@ function App() {
           }
           try {
             const parsed = JSON.parse(payload)
-            // 流式分片：逐段拼接，渲染时实时解析 <hl> 高亮标签
+            // 流式分片：入队后由打字机逐字渲染，渲染时实时解析 <hl> 高亮标签
             if (parsed.content) {
-              setSummary((prev) => prev + parsed.content)
+              enqueueSummary(parsed.content)
             }
             if (parsed.error) {
-              setSummary((prev) => prev + `\n[错误] ${parsed.error}`)
+              enqueueSummary(`\n[错误] ${parsed.error}`)
             }
           } catch {
             // 忽略无法解析的块
@@ -442,10 +489,21 @@ function App() {
     } catch (err) {
       if (err?.name !== 'AbortError') {
         console.warn('[summary] fetch error:', err?.name, err?.message)
-        setSummary((prev) => prev + `\n[请求异常] ${err.message}`)
+        enqueueSummary(`\n[请求异常] ${err.message}`)
       }
     } finally {
-      setSummaryLoading(false)
+      if (abortRef.current === controller) {
+        // 等打字机把队列播完再结束 loading，保证按钮状态与文字同步
+        await new Promise((resolve) => {
+          const timer = setInterval(() => {
+            if (!summaryQueueRef.current) {
+              clearInterval(timer)
+              resolve()
+            }
+          }, 50)
+        })
+        setSummaryLoading(false)
+      }
     }
   }
 

@@ -4,7 +4,11 @@ import OpenAI from 'openai'
 
 import { getSettings, listMessages, updateMessageFlags, upsertSettings } from './db.js'
 
-process.loadEnvFile()
+try {
+  process.loadEnvFile()
+} catch {
+  // 云端无 .env 文件时忽略，直接使用平台注入的环境变量
+}
 
 const app = express()
 const port = Number(process.env.PORT) || 3001
@@ -14,7 +18,14 @@ const client = new OpenAI({
   baseURL: 'https://api.deepseek.com',
 })
 
-app.use(cors())
+// 允许跨域：生产环境前端部署在 Vercel 等独立域名下
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+  })
+)
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/api/health', (_req, res) => {
