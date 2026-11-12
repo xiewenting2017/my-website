@@ -1,8 +1,10 @@
+import bcrypt from 'bcryptjs'
 import cors from 'cors'
 import express from 'express'
+import jwt from 'jsonwebtoken'
 import OpenAI from 'openai'
 
-import { getSettings, listMessages, updateMessageFlags, upsertSettings } from './db.js'
+import { createUser, findUserByEmail, findUserByUsername, getSettings, listMessages, updateMessageFlags, upsertSettings } from './db.js'
 
 if (process.env.NODE_ENV !== 'production') {
   try {
@@ -36,6 +38,104 @@ app.get('/api/health', (_req, res) => {
     service: 'oa-ai-app',
     message: 'Express server is running',
   })
+})
+
+// ---- 认证 ----
+const JWT_SECRET = process.env.JWT_SECRET || (
+  process.env.NODE_ENV === 'production'
+    ? (() => { console.error('[auth] 生产环境必须设置 JWT_SECRET'); process.exit(1) })()
+    : 'dev-change-me-in-production'
+)
+const JWT_EXPIRES_IN = '7d'
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const BC_ROUNDS = 10
+const CODE_TTL_MS = 5 * 60 * 1000          // 5 分钟有效
+const codeStore = new Map()                // email → { code, expireAt }
+
+function signToken(user) {
+  return jwt.sign({ uid: user.id, username: user.username }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  })
+}
+
+function genCode() {
+  return String(Math.floor(100000 + Math.random() * 900000))
+}
+
+function cleanupExpiredCodes() {
+  const now = Date.now()
+  for (const [email, v] of codeStore) if (v.expireAt < now) codeStore.delete(email)
+}
+
+// POST /api/register
+app.post('/api/register', async (req, res) => {
+  const { username, password, email } = req.body ?? {}
+  // 输入校验：400
+  if (!username || typeof username !== 'string' || username.length < 2 || username.length > 32) {
+    res.status(400).json({ error: '用户名需 2-32 位' }); return
+  }
+  if (!password || typeof password !== 'string' || password.length < 6) {
+    res.status(400).json({ error: '密码至少 6 位' }); return
+  }
+  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email)) {
+    res.status(400).json({ error: '邮箱格式不正确' }); return
+  }
+  // 唯一性：409
+  if (findUserByUsername(username)) { res.status(409).json({ error: '用户名已存在' }); return }
+  if (findUserByEmail(email)) { res.status(409).json({ error: '邮箱已注册' }); return }
+  try {
+    const password_hash = await bcrypt.hash(password, BC_ROUNDS)
+    const user = createUser({ username, password_hash, email })
+    res.status(201).json({ user })
+  } catch (e) {
+    console.error('[register] db error', e)
+    res.status(500).json({ error: '服务器错误' })
+  }
+})
+
+// POST /api/login — 密码登录
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body ?? {}
+  if (!username || !password) { res.status(400).json({ error: '缺少用户名或密码' }); return }
+  // 用户不存在 与 密码错误 合并为同一 401，防账号枚举
+  const user = findUserByUsername(username) || findUserByEmail(username) // 支持用邮箱当用户名登录
+  const ok = user && await bcrypt.compare(password, user.password_hash)
+  if (!ok) { res.status(401).json({ error: '用户名或密码错误' }); return }
+  const token = signToken(user)
+  res.json({ token, user: { id: user.id, username: user.username, email: user.email } })
+})
+
+// POST /api/get-code — 获取验证码（开发模式：直接返回 code）
+app.post('/api/get-code', (req, res) => {
+  const { email } = req.body ?? {}
+  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email)) {
+    res.status(400).json({ error: '邮箱格式不正确' }); return
+  }
+  cleanupExpiredCodes()
+  const code = genCode()
+  codeStore.set(email, { code, expireAt: Date.now() + CODE_TTL_MS })
+  console.log(`[get-code] ${email} → ${code}（开发模式，TTL=${CODE_TTL_MS / 60000}min）`)
+  // 开发模式：直接返回验证码，后续接真实短信/邮件时应只返回 200 不暴露 code
+  res.json({ ok: true, email, code, devMode: true, expireIn: Math.floor(CODE_TTL_MS / 1000) })
+})
+
+// POST /api/login-code — 验证码登录
+app.post('/api/login-code', (req, res) => {
+  const { email, code } = req.body ?? {}
+  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email) || !code) {
+    res.status(400).json({ error: '参数不合法' }); return
+  }
+  cleanupExpiredCodes()
+  const saved = codeStore.get(email)
+  if (!saved) { res.status(400).json({ error: '请先获取验证码' }); return }
+  if (saved.expireAt < Date.now()) { res.status(400).json({ error: '验证码已过期' }); return }
+  if (String(saved.code) !== String(code)) { res.status(400).json({ error: '验证码错误' }); return }
+  // 验证码一次性使用
+  codeStore.delete(email)
+  const user = findUserByEmail(email)
+  if (!user) { res.status(404).json({ error: '该邮箱未注册，请先注册' }); return }
+  const token = signToken(user)
+  res.json({ token, user: { id: user.id, username: user.username, email: user.email } })
 })
 
 // ---- 消息表 ----

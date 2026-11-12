@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n web,api -c cyan,magenta \"vite --port 5173\" \"node --watch --env-file=.env server.js\"",
+    "dev": "concurrently -k -n web,api -c cyan,magenta \"vite --port 5173\" \"nodemon --env-file=.env server.js\"",
     "dev:web": "vite --port 5173",
-    "dev:api": "node --watch --env-file=.env server.js",
+    "dev:api": "nodemon --env-file=.env server.js",
     "start": "node --env-file-if-exists=.env server.js",
     "build": "vite build",
     "lint": "oxlint",
@@ -14,8 +14,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.71.0",
     "openai": "^7.55.0",
     "react": "^19.3.1",
@@ -33,6 +35,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.7",
     "jsdom": "^29.1.1",
+    "nodemon": "^3.1.14",
     "oxlint": "^1.90.0",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.6",

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { apiUrl } from './api'
+import Login, { getAuth, clearAuth } from './Login'
 import Settings from './Settings'
 
 const TABS = [
@@ -514,8 +515,20 @@ function App() {
       (activeSource === '全部来源' || m.sourceSystem === activeSource)
   )
 
+  // —— 路由守卫：未登录 → /login，登录后回到原目标页 ——
+  const location = useLocation()
+  const auth = getAuth()
+
   return (
     <Routes>
+      {/* 登录页（放行） */}
+      <Route path="/login" element={<Login />} />
+
+      {/* 路由守卫：未登录强制跳转 */}
+      {!auth.token && (
+        <Route path="*" element={<Navigate to="/login" replace state={{ from: location.pathname }} />} />
+      )}
+
       {/* AI 摘要页面 */}
       <Route path="/summary" element={
         <main className="min-h-screen bg-[#F7FBFF] flex justify-center">

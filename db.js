@@ -26,6 +26,13 @@ CREATE TABLE IF NOT EXISTS settings (
   dnd_end TEXT NOT NULL DEFAULT '08:00',             -- 免打扰结束时间
   updated_at TEXT
 );
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,                      -- 用户名
+  password_hash TEXT NOT NULL,                        -- bcrypt 加密后的密码
+  email TEXT NOT NULL UNIQUE,                         -- 邮箱
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `)
 
 // 轻量迁移：老库补 prefs 列（其余偏好设置的 JSON 快照）
@@ -108,6 +115,23 @@ export function upsertSettings(role, s) {
     new Date().toISOString()
   )
   return getSettings(role)
+}
+
+// ---- users（认证）----
+export function createUser({ username, password_hash, email }) {
+  const stmt = db.prepare(
+    'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)'
+  )
+  const info = stmt.run(username, password_hash, email)
+  return { id: info.lastInsertRowid, username, email }
+}
+
+export function findUserByUsername(username) {
+  return db.prepare('SELECT * FROM users WHERE username = ?').get(username)
+}
+
+export function findUserByEmail(email) {
+  return db.prepare('SELECT * FROM users WHERE email = ?').get(email)
 }
 
 export default db
