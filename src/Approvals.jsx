@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Calendar, ChevronDown, Contact, FilePlus, FileText, LayoutGrid, Plane, Search, Stamp, User, UserCheck, Wallet } from 'lucide-react'
+import { Calendar, Contact, FilePlus, LayoutGrid, Search, Stamp, User } from 'lucide-react'
 
 const FILTER_TABS = [
   { key: 'all', label: '全部状态' },
@@ -19,8 +19,7 @@ const APPROVALS = [
   {
     id: 1,
     type: '报销申请',
-    icon: Wallet,
-    gradient: 'linear-gradient(135deg, #FFC069, #FA8C16)',
+    icon: '/icons/flow/expense-claim.png',
     time: '2小时前',
     applicant: '李华 · 差旅费报销',
     detail: '金额：¥2,350.00',
@@ -30,8 +29,7 @@ const APPROVALS = [
   {
     id: 2,
     type: '请假申请',
-    icon: UserCheck,
-    gradient: 'linear-gradient(135deg, #B39DDB, #8E7CC3)',
+    icon: '/icons/flow/leave.png',
     time: '2小时前',
     applicant: '王芳 · 年假',
     detail: '时间：3天（10.16-10.18）',
@@ -41,8 +39,7 @@ const APPROVALS = [
   {
     id: 3,
     type: '出差申请',
-    icon: Plane,
-    gradient: 'linear-gradient(135deg, #6BA8F5, #4A90E2)',
+    icon: '/icons/flow/business-trip.png',
     time: '昨天',
     applicant: '张伟 · 北京出差',
     detail: '时间：5天（10.20-10.24）',
@@ -52,8 +49,7 @@ const APPROVALS = [
   {
     id: 4,
     type: '请假申请',
-    icon: UserCheck,
-    gradient: 'linear-gradient(135deg, #B39DDB, #8E7CC3)',
+    icon: '/icons/flow/leave.png',
     time: '10-11',
     applicant: '陈明 · 病假',
     detail: '时间：1天',
@@ -63,8 +59,7 @@ const APPROVALS = [
   {
     id: 5,
     type: '文件审批',
-    icon: FileText,
-    gradient: 'linear-gradient(135deg, #5BC0EB, #3AA0D4)',
+    icon: '/icons/flow/seal.png',
     time: '10-10',
     applicant: '赵强 · 合同审批',
     detail: '用印申请',
@@ -128,7 +123,6 @@ export default function Approvals() {
         {/* 审批列表 */}
         <div className="flex-1 px-4 pt-3 space-y-2.5">
           {filtered.map((a) => {
-            const Icon = a.icon
             const s = STATUS_STYLE[a.status]
             return (
               <article
@@ -137,12 +131,7 @@ export default function Approvals() {
               >
                 <div className="flex gap-3">
                   {/* 图标 */}
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: a.gradient }}
-                  >
-                    <Icon size={22} color="#ffffff" strokeWidth={2} />
-                  </div>
+                  <img src={a.icon} alt={a.type} className="w-11 h-11 object-contain shrink-0" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">

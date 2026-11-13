@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Calendar, ChevronDown, Contact, FileText, FileSignature, Clock, Users, BookOpen, ListTodo, Settings, LayoutGrid, Search, Stamp, User } from 'lucide-react'
+import { Bell, Calendar, ChevronDown, Contact, LayoutGrid, Search, Stamp, User } from 'lucide-react'
 import { clearAuth, getAuth } from './Login'
 
 const BANNERS = [
@@ -35,13 +35,13 @@ export default function Workbench() {
   }, [])
 
   const quickFunctions = [
-    { icon: FileText,       label: '文件管理',  gradient: 'linear-gradient(135deg, #FFB347, #FF8C42)' },
-    { icon: FileSignature,  label: '发起审批',  gradient: 'linear-gradient(135deg, #6DD58C, #3DBF6D)' },
-    { icon: Clock,          label: '考勤打卡',  gradient: 'linear-gradient(135deg, #6BA8F5, #4A90E2)' },
-    { icon: Users,          label: '协同交流',  gradient: 'linear-gradient(135deg, #5BC0EB, #3AA0D4)' },
-    { icon: BookOpen,       label: '今日日记',  gradient: 'linear-gradient(135deg, #B39DDB, #8E7CC3)' },
-    { icon: ListTodo,       label: '任务管理',  gradient: 'linear-gradient(135deg, #FFD56B, #FFB52E)' },
-    { icon: Settings,       label: '智慧园区',  gradient: 'linear-gradient(135deg, #6FCF97, #3BAE74)' },
+    { icon: '/icons/flow/file-transfer.png', label: '文件管理' },
+    { icon: '/icons/flow/item.png',          label: '发起审批' },
+    { icon: '/icons/flow/meeting-room.png',  label: '考勤打卡' },
+    { icon: '/icons/flow/seal.png',          label: '协同交流' },
+    { icon: '/icons/flow/file-borrow.png',   label: '今日日记' },
+    { icon: '/icons/flow/ledger-audit.png',  label: '任务管理' },
+    { icon: '/icons/flow/system-permission.png', label: '智慧园区' },
   ]
 
   const pendingApprovals = [
@@ -53,10 +53,10 @@ export default function Workbench() {
   ]
 
   const financeItems = [
-    { icon: '/icons/flow/转固.png', label: '转固' },
-    { icon: '/icons/flow/备用金申请.png', label: '备用金申请' },
-    { icon: '/icons/flow/付款.png', label: '付款' },
-    { icon: '/icons/flow/费用报销.png', label: '费用报销' },
+    { icon: '/icons/flow/fixed-asset.png', label: '转固' },
+    { icon: '/icons/flow/petty-cash.png', label: '备用金申请' },
+    { icon: '/icons/flow/payment.png',     label: '付款' },
+    { icon: '/icons/flow/expense-claim.png', label: '费用报销' },
   ]
 
   return (
@@ -245,15 +245,10 @@ function SectionHeader({ title, count, action, actionPrimary }) {
 }
 
 // —— 应用宫格项 ——
-function AppGridItem({ icon: Icon, label, gradient }) {
+function AppGridItem({ icon, label }) {
   return (
     <button className="flex flex-col items-center gap-2 min-w-0">
-      <div
-        className="w-[52px] h-[52px] rounded-xl flex items-center justify-center"
-        style={{ background: gradient }}
-      >
-        <Icon size={26} color="#ffffff" strokeWidth={2} />
-      </div>
+      <img src={icon} alt={label} className="w-[52px] h-[52px] object-contain" />
       <span className="text-[12px] text-[#323233] truncate max-w-full">{label}</span>
     </button>
   )
