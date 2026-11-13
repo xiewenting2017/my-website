@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Calendar, ChevronDown, Contact, LayoutGrid, Search, Stamp, User } from 'lucide-react'
+import { Bell, Calendar, ChevronDown, Contact, FileText, FileSignature, Clock, Users, BookOpen, ListTodo, Settings, LayoutGrid, Search, Stamp, User } from 'lucide-react'
 import { clearAuth, getAuth } from './Login'
 
 const BANNERS = [
@@ -35,13 +35,13 @@ export default function Workbench() {
   }, [])
 
   const quickFunctions = [
-    { icon: '/icons/flow/文件移交.png', label: '文件管理' },
-    { icon: '/icons/flow/事项.png', label: '发起审批' },
-    { icon: '/icons/flow/会议室使用.png', label: '考勤打卡' },
-    { icon: '/icons/flow/用印.png', label: '协同交流' },
-    { icon: '/icons/flow/文件借阅.png', label: '今日日记' },
-    { icon: '/icons/flow/台账审计.png', label: '任务管理' },
-    { icon: '/icons/flow/系统权限.png', label: '智慧园区' },
+    { icon: FileText,       label: '文件管理',  gradient: 'linear-gradient(135deg, #FFB347, #FF8C42)' },
+    { icon: FileSignature,  label: '发起审批',  gradient: 'linear-gradient(135deg, #6DD58C, #3DBF6D)' },
+    { icon: Clock,          label: '考勤打卡',  gradient: 'linear-gradient(135deg, #6BA8F5, #4A90E2)' },
+    { icon: Users,          label: '协同交流',  gradient: 'linear-gradient(135deg, #5BC0EB, #3AA0D4)' },
+    { icon: BookOpen,       label: '今日日记',  gradient: 'linear-gradient(135deg, #B39DDB, #8E7CC3)' },
+    { icon: ListTodo,       label: '任务管理',  gradient: 'linear-gradient(135deg, #FFD56B, #FFB52E)' },
+    { icon: Settings,       label: '智慧园区',  gradient: 'linear-gradient(135deg, #6FCF97, #3BAE74)' },
   ]
 
   const pendingApprovals = [
@@ -97,12 +97,12 @@ export default function Workbench() {
                     style={{ opacity: bannerIndex === i ? 1 : 0 }}
                   />
                 ))}
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
                   {BANNERS.map((_, i) => (
                     <span
                       key={i}
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        bannerIndex === i ? 'w-4 bg-[#3A8EF5]' : 'w-1.5 bg-[#C8C9CC]'
+                      className={`h-1 rounded-full transition-all duration-300 ${
+                        bannerIndex === i ? 'w-4 bg-[#3A8EF5]' : 'w-1 bg-[#EBEDF0]'
                       }`}
                     />
                   ))}
@@ -245,10 +245,15 @@ function SectionHeader({ title, count, action, actionPrimary }) {
 }
 
 // —— 应用宫格项 ——
-function AppGridItem({ icon, label }) {
+function AppGridItem({ icon: Icon, label, gradient }) {
   return (
     <button className="flex flex-col items-center gap-2 min-w-0">
-      <img src={icon} alt={label} className="w-[52px] h-[52px]" />
+      <div
+        className="w-[52px] h-[52px] rounded-xl flex items-center justify-center"
+        style={{ background: gradient }}
+      >
+        <Icon size={26} color="#ffffff" strokeWidth={2} />
+      </div>
       <span className="text-[12px] text-[#323233] truncate max-w-full">{label}</span>
     </button>
   )
