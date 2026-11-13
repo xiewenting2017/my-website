@@ -19,11 +19,14 @@ export function getAuth() {
 export function setAuth({ token, user }) {
   localStorage.setItem(TOKEN_KEY, token)
   localStorage.setItem(USER_KEY, JSON.stringify(user))
+  // 通知其他组件（尤其是 App 的路由守卫）auth 已变化，重新读取 localStorage
+  window.dispatchEvent(new Event('auth:changed'))
 }
 
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
+  window.dispatchEvent(new Event('auth:changed'))
 }
 
 // —— 飞鸟 Logo（参考设计稿左上角蓝色圆角方块）——

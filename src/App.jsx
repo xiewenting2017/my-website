@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { apiUrl } from './api'
 import Login, { getAuth, clearAuth } from './Login'
+import Workbench from './Workbench'
 import Settings from './Settings'
 
 const TABS = [
@@ -241,6 +242,22 @@ function syncMessageFlags(id, flags) {
 
 function App() {
   const navigate = useNavigate()
+  // 用一个递增数字触发 auth 变化后的重新渲染（localStorage 变化本身不会触发 React 更新）
+  const [authTick, setAuthTick] = useState(0)
+  const auth = getAuth()
+
+  // 监听登录成功事件（Login.jsx 登录后派发 'auth:changed'），刷新 auth 状态
+  useEffect(() => {
+    const handler = () => setAuthTick((v) => v + 1)
+    window.addEventListener('auth:changed', handler)
+    window.addEventListener('storage', handler) // 多 tab 同步
+    return () => {
+      window.removeEventListener('auth:changed', handler)
+      window.removeEventListener('storage', handler)
+    }
+  }, [])
+
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState('all')
   const [activeSource, setActiveSource] = useState('全部来源')
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
@@ -515,22 +532,21 @@ function App() {
       (activeSource === '全部来源' || m.sourceSystem === activeSource)
   )
 
-  // —— 路由守卫：未登录 → /login，登录后回到原目标页 ——
-  const location = useLocation()
-  const auth = getAuth()
+  // —— 固定路由守卫：Routes 结构永不变化，避免条件渲染 Route 导致的 Router 时序问题 ——
+  // 用 authTick 强制每次 auth 变化都触发 App 重新 render，守卫用最新的 auth 状态做判断
+  const isAuthed = !!auth.token
 
   return (
     <Routes>
       {/* 登录页（放行） */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={isAuthed ? <Navigate to="/" replace /> : <Login />} />
 
-      {/* 路由守卫：未登录强制跳转 */}
-      {!auth.token && (
-        <Route path="*" element={<Navigate to="/login" replace state={{ from: location.pathname }} />} />
-      )}
+      {/* 所有受保护的页面：未登录统一 Navigate 到 /login */}
+      <Route path="/" element={isAuthed ? <Workbench /> : <Navigate to="/login" replace />} />
 
       {/* AI 摘要页面 */}
       <Route path="/summary" element={
+        !isAuthed ? <Navigate to="/login" replace /> : (
         <main className="min-h-screen bg-[#F7FBFF] flex justify-center">
           <div className="w-full max-w-[450px] min-h-screen flex flex-col">
             {/* 白底顶部 */}
@@ -625,13 +641,17 @@ function App() {
             </div>
           </div>
         </main>
+        )
       } />
 
       {/* 消息设置页面 */}
-      <Route path="/settings" element={<Settings onBack={() => navigate(-1)} />} />
+      <Route path="/settings" element={
+        !isAuthed ? <Navigate to="/login" replace /> : <Settings onBack={() => navigate(-1)} />
+      } />
 
-      {/* 首页（消息中心） */}
-      <Route path="/" element={
+      {/* 消息中心 */}
+      <Route path="/messages" element={
+        !isAuthed ? <Navigate to="/login" replace /> : (
     <main className="min-h-screen bg-[#F7FBFF] flex justify-center">
       <div className="w-full max-w-[450px] min-h-screen flex flex-col">
         {/* 白色顶部区：状态栏 + 标题栏 + Tab 导航 */}
@@ -642,7 +662,7 @@ function App() {
           {/* 顶部标题栏 */}
           <header className="px-4 pt-2 pb-1">
             <div className="flex items-center justify-between">
-              <button className="w-10 h-10 -ml-2 flex items-center justify-center">
+              <button onClick={() => navigate('/')} className="w-10 h-10 -ml-2 flex items-center justify-center">
               <img src="/icons/back.svg" alt="返回" className="w-[22px] h-[22px]" />
             </button>
             <div className="text-center">
@@ -1477,10 +1497,13 @@ function App() {
         </div>
       )}
     </main>
+        )
       } />
 
-      {/* 兜底：未知路径回到首页 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 兜底：未知路径 */}
+      <Route path="*" element={
+        isAuthed ? <Navigate to="/" replace /> : <Navigate to="/login" replace />
+      } />
     </Routes>
   )
 }

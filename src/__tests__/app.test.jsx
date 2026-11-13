@@ -50,11 +50,15 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 function renderApp() {
+  // 已登录态：消息中心在 /messages，受路由守卫保护
+  localStorage.setItem('oa_token', 'test-token')
+  localStorage.setItem('oa_user', JSON.stringify({ username: 'admin' }))
   return render(
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={['/messages']}>
       <App />
     </MemoryRouter>
   )
