@@ -282,6 +282,27 @@ app.post('/api/summary', async (req, res) => {
   }
 })
 
+// 启动种子：用环境变量创建默认管理员（云端首次部署时 users 表为空）
+async function seedAdmin() {
+  const username = process.env.ADMIN_USERNAME
+  const password = process.env.ADMIN_PASSWORD
+  if (!username || !password) return
+  if (findUserByUsername(username)) {
+    console.log(`[seed] 管理员 ${username} 已存在，跳过`)
+    return
+  }
+  const email = process.env.ADMIN_EMAIL || `${username}@oa.local`
+  if (findUserByEmail(email)) {
+    console.log(`[seed] 邮箱 ${email} 已被占用，跳过创建管理员`)
+    return
+  }
+  const password_hash = await bcrypt.hash(password, BC_ROUNDS)
+  createUser({ username, password_hash, email })
+  console.log(`[seed] 已创建管理员 ${username}（${email}）`)
+}
+
+seedAdmin().catch((e) => console.error('[seed] 创建管理员失败', e))
+
 app.listen(port, () => {
   console.log(`API server listening on http://localhost:${port}`)
 })
