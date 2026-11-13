@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { apiUrl } from './api'
 import Login, { getAuth, clearAuth } from './Login'
 import Workbench from './Workbench'
+import Approvals from './Approvals'
 import Settings from './Settings'
 
 const TABS = [
@@ -543,6 +544,11 @@ function App() {
 
       {/* 所有受保护的页面：未登录统一 Navigate 到 /login */}
       <Route path="/" element={isAuthed ? <Workbench /> : <Navigate to="/login" replace />} />
+
+      {/* 审批列表页 */}
+      <Route path="/approvals" element={
+        !isAuthed ? <Navigate to="/login" replace /> : <Approvals />
+      } />
 
       {/* AI 摘要页面 */}
       <Route path="/summary" element={

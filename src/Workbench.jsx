@@ -212,7 +212,7 @@ export default function Workbench() {
           activeTab={activeTab}
           onTab={(key) => {
             if (key === 'approval') {
-              navigate('/messages')
+              navigate('/approvals')
               return
             }
             if (key === 'schedule' || key === 'contacts') {
