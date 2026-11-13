@@ -836,7 +836,7 @@ function App() {
                   {/* 第一行：图标 + sender + title + time */}
                   <div className="flex items-start gap-2.5">
                     {/* 图标 — 直接用 png，不加背景框 */}
-                    <img src={msg.iconPath} alt={msg.sender} className="w-9 h-9 object-contain shrink-0 mt-0.5" />
+                    <img src={msg.iconPath} alt={msg.sender} className="w-[46px] h-[46px] object-contain shrink-0 mt-0.5" />
 
                     <div className="flex-1 min-w-0 pt-0.5">
                       <div className="flex items-center gap-1.5">

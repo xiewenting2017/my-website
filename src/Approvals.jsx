@@ -131,7 +131,7 @@ export default function Approvals() {
               >
                 <div className="flex gap-3">
                   {/* 图标 */}
-                  <img src={a.icon} alt={a.type} className="w-11 h-11 object-contain shrink-0" />
+                  <img src={a.icon} alt={a.type} className="w-[46px] h-[46px] object-contain shrink-0" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">

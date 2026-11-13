@@ -125,9 +125,7 @@ export default function Workbench() {
                 <div className={`${CARD} p-4`}>
                   {pendingApprovals.map((a, i) => (
                     <div key={i} className="flex gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#FFF7E6] flex items-center justify-center text-[16px] shrink-0">
-                        💰
-                      </div>
+                      <img src="/icons/flow/expense-claim.png" alt={a.title} className="w-[46px] h-[46px] object-contain shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div>
@@ -248,7 +246,7 @@ function SectionHeader({ title, count, action, actionPrimary }) {
 function AppGridItem({ icon, label }) {
   return (
     <button className="flex flex-col items-center gap-2 min-w-0">
-      <img src={icon} alt={label} className="w-[52px] h-[52px] object-contain" />
+      <img src={icon} alt={label} className="w-[46px] h-[46px] object-contain" />
       <span className="text-[12px] text-[#323233] truncate max-w-full">{label}</span>
     </button>
   )
