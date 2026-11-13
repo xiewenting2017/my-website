@@ -4,7 +4,9 @@ import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const db = new DatabaseSync(path.join(__dirname, 'data.db'))
+// 数据库路径：优先使用环境变量 DB_PATH（Render 持久磁盘挂载点），否则本地 ./data.db
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'data.db')
+const db = new DatabaseSync(dbPath)
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS messages (

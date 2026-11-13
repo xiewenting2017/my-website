@@ -114,9 +114,10 @@ app.post('/api/get-code', (req, res) => {
   cleanupExpiredCodes()
   const code = genCode()
   codeStore.set(email, { code, expireAt: Date.now() + CODE_TTL_MS })
-  console.log(`[get-code] ${email} → ${code}（开发模式，TTL=${CODE_TTL_MS / 60000}min）`)
-  // 开发模式：直接返回验证码，后续接真实短信/邮件时应只返回 200 不暴露 code
-  res.json({ ok: true, email, code, devMode: true, expireIn: Math.floor(CODE_TTL_MS / 1000) })
+  // 日志中对验证码脱敏，避免泄露到日志系统
+  console.log(`[get-code] ${email} → ***（已发送，TTL=${CODE_TTL_MS / 60000}min）`)
+  // 响应体不再返回验证码，前端只收到发送成功确认
+  res.json({ ok: true, email, expireIn: Math.floor(CODE_TTL_MS / 1000) })
 })
 
 // POST /api/login-code — 验证码登录

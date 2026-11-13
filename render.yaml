@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: oa-ai-app-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npm run build
+    startCommand: node --env-file-if-exists=.env server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # DB_PATH 指向持久磁盘挂载目录下的 data.db
+      # 下方 disks.mountPath 决定了实际路径，保持一致即可
+      - key: DB_PATH
+        value: /data/data.db
+      - key: PORT
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      # 首次部署时可配置环境变量自动创建管理员
+      # - key: ADMIN_USERNAME
+      #   sync: false
+      # - key: ADMIN_PASSWORD
+      #   sync: false
+      # - key: ADMIN_EMAIL
+      #   sync: false
+    # 持久磁盘：挂载到容器内 /data 目录
+    # SQLite 数据库文件将存放在此，部署/重启不会丢失
+    disks:
+      - name: oa-data
+        mountPath: /data
+        sizeGB: 1
